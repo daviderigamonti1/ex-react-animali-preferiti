@@ -1,12 +1,3 @@
-<!-- 📌 Milestone 2: Aggiungere Animali Casuali
-Trasforma l’array animals usando useState (l’array è inizialmente vuoto).
-Aggiungi un bottone "Aggiungi Animale" sopra il <details>.
-Cliccando il bottone, un animale casuale viene aggiunto alla lista.
-Usa un array predefinito per scegliere casualmente:
-const animalsChoices = ["Cane", "Gatto", "Pappagallo", "Cavallo", "Panda"];
-L’animale selezionato deve essere aggiunto all’interno della lista <ul> come <li>.
-Obiettivo: L’utente può vedere gli animali aggiunti dinamicamente nella lista. -->
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -21,20 +12,47 @@ Obiettivo: L’utente può vedere gli animali aggiunti dinamicamente nella lista
     <script type="text/babel">
         const { useState } = React;
 
+        function Modal({
+            title,
+            content,
+            show = false,
+            onClose = () => { },
+            onConfirm = () => { }
+        }) {
+            return show && ReactDOM.createPortal(
+                <div className="modal-container">
+                    <div className="modal">
+                        <h2>{title}</h2>
+                        <p>{content}</p>
+                        <div>
+                            <button onClick={onConfirm}>Conferma</button>
+                            <button onClick={onClose}>Annulla</button>
+                        </div>
+                    </div>
+                </div>,
+                document.body
+            )
+        }
+
         const Animali = () => {
-            const [animals, setAnimals] = useState([])
+            const [animals, setAnimals] = useState([]);
+
+            const [show, setShow] = useState(false);
+
+            const [query, setQuery] = useState('');
 
             const animalsChoices = ["Cane", "Gatto", "Pappagallo", "Cavallo", "Panda"];
 
             const addAnimal = () => {
-                const randomIndex = Math.floor(Math.random() * animalsChoices.length);
-                const randomAnimal = animalsChoices[randomIndex];
-                setAnimals(curr => [...curr, randomAnimal]);
+                if (!query) return;
+                setAnimals(curr => [...curr, query]);
+                setQuery('');
+                setShow(false);
             }
 
             return (
                 <>
-                    <button onClick={addAnimal}>Aggiungi animale</button>
+                    <button onClick={() => setShow(true)}>Aggiungi animale</button>
                     <details>
                         <summary>Animali</summary>
                         <ul>
@@ -43,6 +61,19 @@ Obiettivo: L’utente può vedere gli animali aggiunti dinamicamente nella lista
                             })}
                         </ul>
                     </details >
+                    <Modal
+                        show={show}
+                        onClose={() => setShow(false)}
+                        onConfirm={addAnimal}
+                        title="Aggiungi animale"
+                        content={
+                            <input
+                                type="text"
+                                value={query}
+                                onChange={e => setQuery(e.target.value)}
+                            />
+                        }
+                    />
                 </>
             )
         }
