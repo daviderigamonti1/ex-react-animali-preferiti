@@ -23,7 +23,7 @@
                 <div className="modal-container">
                     <div className="modal">
                         <h2>{title}</h2>
-                        <p>{content}</p>
+                        <div>{content}</div>
                         <div>
                             <button onClick={onConfirm}>Conferma</button>
                             <button onClick={onClose}>Annulla</button>
@@ -39,15 +39,39 @@
 
             const [show, setShow] = useState(false);
 
-            const [query, setQuery] = useState('');
+            const [isLoading, setIsLoading] = useState(false);
+
+            const [errorMessage, setErrorMessage] = useState('');
+
+            const [animalName, setAnimalName] = useState('');
 
             const animalsChoices = ["Cane", "Gatto", "Pappagallo", "Cavallo", "Panda"];
 
-            const addAnimal = () => {
-                if (!query) return;
-                setAnimals(curr => [...curr, query]);
-                setQuery('');
-                setShow(false);
+            const addAnimal = async () => {
+                if (!animalName.trim()) return;
+                setIsLoading(true);
+                setErrorMessage('');
+                try {
+                    const response = await fetch(`https://boolean-spec-frontend.vercel.app/freetestapi/animals?search=${animalName}`)
+                    const [animalData] = await response.json();
+                    if (!animalData) {
+                        throw new Error("Nessun animale trovato");
+                    }
+                    const animal = {
+                        name: animalData.name || 'Nome non trovato',
+                        description: animalData.description || 'Descrizione non trovata',
+                        image: animalData.image || null
+                    }
+                    setAnimals(curr => [...curr, animal]);
+                } catch (err) {
+                    console.error(err);
+                    const message = err.message === "Nessun animale trovato" ? "Nessun animale trovato" : "Errore durante la ricerca dell'animale"
+                    setErrorMessage(message);
+                } finally {
+                    setIsLoading(false);
+                    setAnimalName('');
+                    setShow(false);
+                }
             }
 
             return (
@@ -55,24 +79,38 @@
                     <button onClick={() => setShow(true)}>Aggiungi animale</button>
                     <details>
                         <summary>Animali</summary>
-                        <ul>
-                            {animals.map((animal, index) => {
-                                return <li key={index}>{animal}</li>
-                            })}
-                        </ul>
+                        <div>
+                            {errorMessage && <p style={{ color: 'red' }}>{errorMessage}</p>}
+                            {animals.map((animal, index) => (
+                                <div key={index} className="card">
+                                    <div>
+                                        <h3>{animal.name}</h3>
+                                        <p>{animal.description}</p>
+                                    </div>
+                                    {animal.image &&
+                                        <figure>
+                                            <img src={animal.image} alt={animal.name} />
+                                        </figure>
+                                    }
+                                </div>
+                            ))}
+                        </div>
                     </details >
                     <Modal
                         show={show}
                         onClose={() => setShow(false)}
                         onConfirm={addAnimal}
                         title="Aggiungi animale"
-                        content={
+                        content={<>
                             <input
                                 type="text"
-                                value={query}
-                                onChange={e => setQuery(e.target.value)}
+                                required
+                                value={animalName}
+                                onChange={e => setAnimalName(e.target.value)}
+                                placeholder="Nome animale"
                             />
-                        }
+                            {isLoading && <p>Caricando il risultato...</p>}
+                        </>}
                     />
                 </>
             )
